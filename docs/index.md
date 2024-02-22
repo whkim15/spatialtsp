@@ -14,3 +14,6 @@
 ## Features
 
 -   TODO
+
+## Demos
+- Have to upload the figure of toydata analysis

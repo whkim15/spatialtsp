@@ -84,3 +84,5 @@ nav:
     - API Reference:
           - spatialtsp module: spatialtsp.md
           - common module: common.md
+    - Class510 Test:
+          - class510/lab4.ipynb

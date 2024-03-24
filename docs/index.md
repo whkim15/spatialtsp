@@ -18,5 +18,5 @@
 
 
 ## Demos
--   Succesfully applied into the toy data of 25 points and 30 points
+-   Successfully applied into the toy data of 25 points and 30 points
 -   Now on the process of applying this methodology into the simulation

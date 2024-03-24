@@ -13,7 +13,10 @@
 
 ## Features
 
--   TODO
+-   Generate distance matrix based on the spatial information
+-   Analyze Traveling Salesman Problem
+
 
 ## Demos
-- Have to upload the figure of toydata analysis
+-   Succesfully applied into the toy data of 25 points and 30 points
+-   Now on the process of applying this methodology into the simulation

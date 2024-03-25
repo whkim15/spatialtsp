@@ -83,7 +83,18 @@ nav:
         - examples/intro.ipynb
         - examples/ipyleaflet.ipynb
         - examples/Vector.ipynb
-        - examples/is_far_enough.ipynb
+        - examples/countries.json
+        - examples/countries.prj
+        - examples/countries.shp
+        - examples/countries.shx
+        - examples/countries.cpg
+        - examples/countries.csv
+        - examples/countries.dbf
+        - examples/continents.json
+        - examples/countries.zip
+        - examples/europe_100.geo.json
+
+        
     - API Reference:
           - spatialtsp module: spatialtsp.md
           - common module: common.md

@@ -81,12 +81,9 @@ nav:
     - Report Issues: https://github.com/whkim15/spatialtsp/issues
     - Examples:
         - examples/intro.ipynb
-        - examples/spatialTSP.ipynb
+        - examples/spatialtsp.ipynb
         - examples/ipyleaflet.ipynb
         - examples/Vector.ipynb
-
-
-        
     - API Reference:
           - spatialtsp module: spatialtsp.md
           - common module: common.md

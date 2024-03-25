@@ -5,7 +5,18 @@ import ipyleaflet
 from ipyleaflet import basemaps
 
 class Map(ipyleaflet.Map):
+    """Ths is the map class that inherits from ipyleaflet.Map.
+
+    Args:
+        ipyleaflet (Map): The ipyleaflet.Map class.
+    """
     def __init__(self, center=[20, 0], zoom=2, **kwargs):
+        """Initialize the map.
+
+        Args:
+            center (list, optional): Set the center of the map. Defaults to [20, 0].
+            zoom (int, optional): Set the zoom level of the map. Defaults to 2.
+        """
         super().__init__(center=center, zoom=zoom, **kwargs)
 
     def add_tile_layer(self, url, name, **kwargs):

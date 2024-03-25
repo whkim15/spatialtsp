@@ -5,7 +5,7 @@ import ipyleaflet
 from ipyleaflet import basemaps
 
 class Map(ipyleaflet.Map):
-    """Ths is the map class that inherits from ipyleaflet.Map.
+    """This is the map class that inherits from ipyleaflet.Map.
 
     Args:
         ipyleaflet (Map): The ipyleaflet.Map class.

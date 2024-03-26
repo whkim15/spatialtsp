@@ -4,7 +4,7 @@
 def csv_to_df(csv_file):
     """Converts a CSV file to a pandas DataFrame.
 
-    Args : csv_file(str) : The path to the CSV fle.
+    Args : csv_file(str) : The path to the CSV file.
 
     Returns:
         pandas.DataFrame: The pandas Dataframe.

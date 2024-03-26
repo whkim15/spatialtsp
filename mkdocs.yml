@@ -84,9 +84,11 @@ nav:
         - examples/spatialtsp.ipynb
         - examples/ipyleaflet.ipynb
         - examples/Vector.ipynb
+        - examples/csv.ipynb
     - API Reference:
           - spatialtsp module: spatialtsp.md
           - common module: common.md
+          - utils module: utils.md 
     - Class510 Test:
         - class510/lab4.ipynb
         - class510/lab5.ipynb

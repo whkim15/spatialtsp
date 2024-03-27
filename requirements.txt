@@ -3,3 +3,4 @@ numpy
 pyshp
 pandas
 scipy>=1.7.1 
+scikit-learn

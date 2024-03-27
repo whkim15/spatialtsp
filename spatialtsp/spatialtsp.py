@@ -149,3 +149,26 @@ def generate_clustered_points(num_points, std_dev=5, cluster_centers=[(13, 13), 
     gdf_points = gpd.GeoDataFrame({'geometry': [Point(p) for p in points_list]}, crs="EPSG:4326")
     
     return gdf_points
+
+
+## Calculate Standard distance
+def calculate_distance_matrix(gdf_points):
+    """Calculate the distance matrix between points.
+
+    Args:
+        gdf_points (GeoDataFrame): A GeoDataFrame containing points with x and y coordinates.
+
+    Returns:
+        np.array: A 2D numpy array representing the distance matrix. The distance is calculated as the Euclidean distance between points, multiplied by 100 and rounded to analyze with integer.
+    """
+    points = np.array([[point.x, point.y] for point in gdf_points.geometry])
+    num_points = len(points)
+    distance_matrix = np.zeros((num_points, num_points), dtype=int)
+    for i in range(num_points):
+        for j in range(num_points):
+            if i != j:
+                distance = np.sqrt((points[i][0] - points[j][0])**2 + (points[i][1] - points[j][1])**2)*100
+                distance_matrix[i, j] = round(distance)
+            else:
+                distance_matrix[i, j] = 0
+    return distance_matrix

@@ -62,15 +62,21 @@ class Map(ipyleaflet.Map):
         """Adds a GeoJSON layer to the map.
 
         Args:
-            data (str | dict): GeoJSON data as a string or a dictionary.
-            name (str, optional): The name of the layer. Defaults to "geojson"
+            data (str | dict): GeoJSON data as a string, a dictionary, or a URL.
+            name (str, optional): The name of the layer. Defaults to "geojson".
         """
-
+        import requests
         import json
 
         if isinstance(data, str):
-            with open(data) as f:
-                data = json.load(f)
+            if data.startswith('http://') or data.startswith('https://'):
+                # data is a URL
+                response = requests.get(data)
+                data = response.json()
+            else:
+                # data is a file path
+                with open(data) as f:
+                    data = json.load(f)
 
         if "style" not in kwargs:
             kwargs["style"]={"color": "blue", "weight":1, "fillOpacity":0}
@@ -80,7 +86,6 @@ class Map(ipyleaflet.Map):
 
         layer = ipyleaflet.GeoJSON(data=data, name=name, **kwargs)
         self.add(layer)
-
 
     def add_shp(self, data, name='shp', **kwargs):
         """Adds a shapefile to the map 
@@ -97,6 +102,34 @@ class Map(ipyleaflet.Map):
                 data = shp.__geo_interface__
         
         self.add_geojson(data, name, **kwargs)
+    
+    def add_vector(self, data, name="VectorLayer", **kwargs):
+        """Adds a vector layer to the map from any GeoPandas-supported vector data format.
+
+        Args:
+            data (str, dict, or geopandas.GeoDataFrame): The vector data. It can be a path to a file (GeoJSON, shapefile), a GeoJSON dict, or a GeoDataFrame.
+            name (str, optional): The name of the layer. Defaults to "VectorLayer".
+        """
+        import geopandas as gpd
+        import json
+
+        # Check the data type
+        if isinstance(data, gpd.GeoDataFrame):
+            geojson_data = json.loads(data.to_json())
+        # if data is a string or a dictionary
+        elif isinstance(data, (str, dict)):
+            # if data is a string
+            if isinstance(data, str):
+                data = gpd.read_file(data)
+                geojson_data = json.loads(data.to_json())
+            else:  # if data is a dictionary
+                geojson_data = data
+        else:
+            raise ValueError("Unsupported data format")
+
+        # Add the GeoJSON data to the map
+        self.add_geojson(geojson_data, name, **kwargs)
+
 
 
 def is_far_enough(new_point, existing_points, min_distance=3):

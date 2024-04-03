@@ -130,8 +130,6 @@ class Map(ipyleaflet.Map):
         # Add the GeoJSON data to the map
         self.add_geojson(geojson_data, name, **kwargs)
 
-
-
 def is_far_enough(new_point, existing_points, min_distance=3):
     """Check if a new point is far enough from existing points.
 

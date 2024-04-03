@@ -1,7 +1,7 @@
 """Main module."""
 
 # For ipyleaflet
-import requests 
+import requests
 import ipyleaflet
 from ipyleaflet import basemaps, GeoJSON
 
@@ -66,15 +66,11 @@ class Map(ipyleaflet.Map):
             name (str, optional): The name of the layer. Defaults to "geojson"
         """
 
-        if isinstance(data, str) and data.startswith('http'):
-            # URL에서 GeoJSON 데이터 불러오기
-            response = requests.get(data)
-            geojson_data = response.json()  # JSON 데이터로 변환
-        elif isinstance(data, str):
-            # 로컬 파일 시스템에서 GeoJSON 데이터 불러오기 (이 부분은 제거하거나 수정)
-        else:
-            # 이미 딕셔너리 형태의 GeoJSON 데이터가 제공된 경우
-            geojson_data = data
+        import json
+
+        if isinstance(data, str):
+            with open(data) as f:
+                data = json.load(f)
 
         if "style" not in kwargs:
             kwargs["style"]={"color": "blue", "weight":1, "fillOpacity":0}
@@ -86,34 +82,34 @@ class Map(ipyleaflet.Map):
         self.add(layer)
 
 
-    def add_geojson_2(self, data, name="geojson", **kwargs):
-        """Adds a GeoJSON layer to the map.
+    # def add_geojson_2(self, data, name="geojson", **kwargs):
+    #     """Adds a GeoJSON layer to the map.
 
-        Args:
-            data (str | dict): GeoJSON data as a string or a dictionary.
-            name (str, optional): The name of the layer. Defaults to "geojson"
-        """
-        if isinstance(data, str) and data.startswith('http'):
-            # URL에서 GeoJSON 데이터 불러오기
-            response = requests.get(data)
-            geojson_data = response.json()  # JSON 데이터로 변환
-        elif isinstance(data, str):
-            # 로컬 파일 시스템에서 GeoJSON 데이터 불러오기
-            with open(data) as f:
-                geojson_data = json.load(f)
-        else:
-            # 이미 딕셔너리 형태의 GeoJSON 데이터가 제공된 경우
-            geojson_data = data
+    #     Args:
+    #         data (str | dict): GeoJSON data as a string or a dictionary.
+    #         name (str, optional): The name of the layer. Defaults to "geojson"
+    #     """
+    #     if isinstance(data, str) and data.startswith('http'):
+    #         # URL에서 GeoJSON 데이터 불러오기
+    #         response = requests.get(data)
+    #         geojson_data = response.json()  # JSON 데이터로 변환
+    #     elif isinstance(data, str):
+    #         # 로컬 파일 시스템에서 GeoJSON 데이터 불러오기
+    #         with open(data) as f:
+    #             geojson_data = json.load(f)
+    #     else:
+    #         # 이미 딕셔너리 형태의 GeoJSON 데이터가 제공된 경우
+    #         geojson_data = data
 
-        # 스타일 매개변수 설정
-        if "style" not in kwargs:
-            kwargs["style"] = {"color": "blue", "weight":1, "fillOpacity":0.5}
-        if "hover_style" not in kwargs:
-            kwargs["hover_style"] = {"color": "green", "weight":1, "fillOpacity":0.8}
+    #     # 스타일 매개변수 설정
+    #     if "style" not in kwargs:
+    #         kwargs["style"] = {"color": "blue", "weight":1, "fillOpacity":0.5}
+    #     if "hover_style" not in kwargs:
+    #         kwargs["hover_style"] = {"color": "green", "weight":1, "fillOpacity":0.8}
 
-        # GeoJSON 레이어 생성 및 추가
-        layer = ipyleaflet.GeoJSON(data=geojson_data, name=name, **kwargs)
-        self.add(layer)
+    #     # GeoJSON 레이어 생성 및 추가
+    #     layer = ipyleaflet.GeoJSON(data=geojson_data, name=name, **kwargs)
+    #     self.add(layer)
 
 
     def add_shp(self, data, name='shp', **kwargs):

@@ -243,7 +243,8 @@ class Map(ipyleaflet.Map):
         self.add(control)
         widgets.jslink((zoom_slider, "value"), (self, "zoom"))
 
-        
+
+## TSP Functions
 
 def is_far_enough(new_point, existing_points, min_distance=3):
     """Check if a new point is far enough from existing points.

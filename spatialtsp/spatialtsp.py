@@ -243,6 +243,158 @@ class Map(ipyleaflet.Map):
         self.add(control)
         widgets.jslink((zoom_slider, "value"), (self, "zoom"))
 
+    def add_toolbar(self, position="topright"):
+        """Adds a toolbar to the map.
+
+        Args:
+            position (str, optional): The position of the toolbar. Defaults to "topright".
+        """
+
+        padding = "0px 0px 0px 5px"  # upper, right, bottom, left
+
+        toolbar_button = widgets.ToggleButton(
+            value=False,
+            tooltip="Toolbar",
+            icon="wrench",
+            layout=widgets.Layout(width="28px", height="28px", padding=padding),
+        )
+
+        close_button = widgets.ToggleButton(
+            value=False,
+            tooltip="Close the tool",
+            icon="times",
+            button_style="primary",
+            layout=widgets.Layout(height="28px", width="28px", padding=padding),
+        )
+
+        toolbar = widgets.VBox([toolbar_button])
+
+        def close_click(change):
+            if change["new"]:
+                toolbar_button.close()
+                close_button.close()
+                toolbar.close()
+
+        close_button.observe(close_click, "value")
+
+        rows = 2
+        cols = 2
+        grid = widgets.GridspecLayout(
+            rows, cols, grid_gap="0px", layout=widgets.Layout(width="65px")
+        )
+
+        icons = ["folder-open", "map", "info", "question"]
+
+        for i in range(rows):
+            for j in range(cols):
+                grid[i, j] = widgets.Button(
+                    description="",
+                    button_style="primary",
+                    icon=icons[i * rows + j],
+                    layout=widgets.Layout(width="28px", padding="0px"),
+                )
+
+        def toolbar_click(change):
+            if change["new"]:
+                toolbar.children = [widgets.HBox([close_button, toolbar_button]), grid]
+            else:
+                toolbar.children = [toolbar_button]
+
+        # Add a new button to the toolbar for the basemap GUI
+
+        basemap_gui_button = widgets.Button(
+            description="",
+            button_style="primary",
+            tooltip='Toggle',  # Set tooltip to a shorter string
+            icon="globe",  # Use a different icon for the basemap GUI button
+            layout=widgets.Layout(width="28px", padding="0px"),
+        )
+
+        basemap_gui_button.description = "off"
+        grid[0, 0] = basemap_gui_button  # Replace this with the desired position
+
+        toolbar_button.observe(toolbar_click, "value")
+        toolbar_ctrl = WidgetControl(widget=toolbar, position="topright")
+        self.add(toolbar_ctrl)        
+
+
+        output = widgets.Output()
+        output_control = WidgetControl(widget=output, position="bottomright")
+        self.add(output_control)
+
+        def toolbar_callback(change):
+            with output:
+                output.clear_output()
+                if change.icon == "folder-open":
+                    print(f"You can open a file")
+                elif change.icon == "map":
+                    print(f"You can add a layer")
+                elif change.icon == "globe":
+                    if basemap_gui_button.description == "off" and self.basemap_gui_control is None:  # Check if the basemap GUI is not displayed and not already added
+                        self.add_basemap_gui()  # Call the add_basemap_gui function
+                        basemap_gui_button.description = "on"  # Update the state of the button
+                        print(f"Basemap GUI added")
+                    else:  # If the basemap GUI is displayed
+                        self.remove(self.basemap_gui_control)  # Remove the basemap GUI
+                        self.basemap_gui_control = None  # Reset the basemap GUI control
+                        basemap_gui_button.description = "off"  # Update the state of the button
+                        print(f"Basemap GUI removed")
+
+                else:
+                    with output:
+                        output.clear_output()
+                    print(f"Icon: {change.icon}")
+
+        for tool in grid.children:
+            tool.on_click(toolbar_callback)
+
+
+
+    def add_wms_layer(
+        self,
+        url,
+        layers,
+        name=None,
+        attribution="",
+        format="image/png",
+        transparent=True,
+        opacity=1.0,
+        shown=True,
+        **kwargs,
+    ):
+        """Add a WMS layer to the map.
+
+        Args:
+            url (str): The URL of the WMS web service.
+            layers (str): Comma-separated list of WMS layers to show.
+            name (str, optional): The layer name to use on the layer control. Defaults to None.
+            attribution (str, optional): The attribution of the data layer. Defaults to ''.
+            format (str, optional): WMS image format (use ‘image/png’ for layers with transparency). Defaults to 'image/png'.
+            transparent (bool, optional): If True, the WMS service will return images with transparency. Defaults to True.
+            opacity (float, optional): The opacity of the layer. Defaults to 1.0.
+            shown (bool, optional): A flag indicating whether the layer should be on by default. Defaults to True.
+        """
+
+        if name is None:
+            name = str(layers)
+
+        try:
+            wms_layer = ipyleaflet.WMSLayer(
+                url=url,
+                layers=layers,
+                name=name,
+                attribution=attribution,
+                format=format,
+                transparent=transparent,
+                opacity=opacity,
+                visible=shown,
+                **kwargs,
+            )
+            self.add(wms_layer)
+
+        except Exception as e:
+            print("Failed to add the specified WMS TileLayer.")
+            raise Exception(e)
 
 ## TSP Functions
 

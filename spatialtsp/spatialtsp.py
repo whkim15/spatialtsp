@@ -350,53 +350,6 @@ class Map(ipyleaflet.Map):
             tool.on_click(toolbar_callback)
 
 
-
-    def add_wms_layer(
-        self,
-        url,
-        layers,
-        name=None,
-        attribution="",
-        format="image/png",
-        transparent=True,
-        opacity=1.0,
-        shown=True,
-        **kwargs,
-    ):
-        """Add a WMS layer to the map.
-
-        Args:
-            url (str): The URL of the WMS web service.
-            layers (str): Comma-separated list of WMS layers to show.
-            name (str, optional): The layer name to use on the layer control. Defaults to None.
-            attribution (str, optional): The attribution of the data layer. Defaults to ''.
-            format (str, optional): WMS image format (use ‘image/png’ for layers with transparency). Defaults to 'image/png'.
-            transparent (bool, optional): If True, the WMS service will return images with transparency. Defaults to True.
-            opacity (float, optional): The opacity of the layer. Defaults to 1.0.
-            shown (bool, optional): A flag indicating whether the layer should be on by default. Defaults to True.
-        """
-
-        if name is None:
-            name = str(layers)
-
-        try:
-            wms_layer = ipyleaflet.WMSLayer(
-                url=url,
-                layers=layers,
-                name=name,
-                attribution=attribution,
-                format=format,
-                transparent=transparent,
-                opacity=opacity,
-                visible=shown,
-                **kwargs,
-            )
-            self.add(wms_layer)
-
-        except Exception as e:
-            print("Failed to add the specified WMS TileLayer.")
-            raise Exception(e)
-
 ## TSP Functions
 
 def is_far_enough(new_point, existing_points, min_distance=3):

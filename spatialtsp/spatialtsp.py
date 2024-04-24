@@ -152,6 +152,7 @@ class Map(ipyleaflet.Map):
                 "OpenTopoMap",
                 "Esri.WorldImagery",
                 "Esri.NatGeoWorldMap",
+                "CartoDB.DarkMatter"
                 "USGS Hydrography",
             ],
             description="Basemap",

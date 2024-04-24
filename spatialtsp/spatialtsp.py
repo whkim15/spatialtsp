@@ -245,7 +245,7 @@ class Map(ipyleaflet.Map):
         self.add(control)
         widgets.jslink((zoom_slider, "value"), (self, "zoom"))
 
-    def add_toolbar(self, position="topright"):
+    def add_toolbar(self, position="topright"): #add toolbar functionality, basemap gui button, how keep toolbar from disappearing, remove basemap widget
         """Adds a toolbar to the map.
 
         Args:
@@ -270,6 +270,7 @@ class Map(ipyleaflet.Map):
         )
 
         toolbar = widgets.VBox([toolbar_button])
+
 
         def close_click(change):
             if change["new"]:
@@ -296,55 +297,49 @@ class Map(ipyleaflet.Map):
                     layout=widgets.Layout(width="28px", padding="0px"),
                 )
 
-        def toolbar_click(change):
+
+        #click signal to backend/frontend
+        def on_click(change):
             if change["new"]:
                 toolbar.children = [widgets.HBox([close_button, toolbar_button]), grid]
             else:
                 toolbar.children = [toolbar_button]
 
-        # Add a new button to the toolbar for the basemap GUI
-
-        basemap_gui_button = widgets.Button(
-            description="",
-            button_style="primary",
-            tooltip='Toggle',  # Set tooltip to a shorter string
-            icon="globe",  # Use a different icon for the basemap GUI button
-            layout=widgets.Layout(width="28px", padding="0px"),
-        )
-
-        basemap_gui_button.description = "off"
-        grid[0, 0] = basemap_gui_button  # Replace this with the desired position
-
-        toolbar_button.observe(toolbar_click, "value")
+        toolbar_button.observe(on_click, "value")
         toolbar_ctrl = WidgetControl(widget=toolbar, position="topright")
-        self.add(toolbar_ctrl)        
+        self.add(toolbar_ctrl)
 
-
+        #output widget confirming button click
         output = widgets.Output()
         output_control = WidgetControl(widget=output, position="bottomright")
         self.add(output_control)
 
-        def toolbar_callback(change):
-            with output:
-                output.clear_output()
-                if change.icon == "folder-open":
-                    print(f"You can open a file")
-                elif change.icon == "map":
-                    print(f"You can add a layer")
-                elif change.icon == "globe":
-                    if basemap_gui_button.description == "off" and self.basemap_gui_control is None:  # Check if the basemap GUI is not displayed and not already added
-                        self.add_basemap_gui()  # Call the add_basemap_gui function
-                        basemap_gui_button.description = "on"  # Update the state of the button
-                        print(f"Basemap GUI added")
-                    else:  # If the basemap GUI is displayed
-                        self.remove(self.basemap_gui_control)  # Remove the basemap GUI
-                        self.basemap_gui_control = None  # Reset the basemap GUI control
-                        basemap_gui_button.description = "off"  # Update the state of the button
-                        print(f"Basemap GUI removed")
 
-                else:
-                    with output:
-                        output.clear_output()
+
+
+
+        def toolbar_callback(change): #links to actions to buttons,
+            if change.icon == "folder-open":
+                with output:
+                    output.clear_output()
+                    print(f"You can open a file")
+            elif change.icon == "map":
+                self.add_basemap_gui() #call basemap selector
+                with output:           #how to clear?
+                    # close_button.on_click(close_click)
+                    output.clear_output()
+                    print("change the basemap")
+            elif change.icon == "info":
+                with output:
+                    output.clear_output()
+                    print("There is no info here.")
+            elif change.icon == "question":
+                with output:
+                    output.clear_output()
+                    print("There is no help here.")
+            else:
+                with output:
+                    output.clear_output()
                     print(f"Icon: {change.icon}")
 
         for tool in grid.children:

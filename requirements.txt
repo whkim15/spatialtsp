@@ -9,3 +9,8 @@ shapely
 requests
 ipywidgets
 localtileserver
+osmnx  
+networkx 
+cplex  
+matplotlib  
+pyproj 

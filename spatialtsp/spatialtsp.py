@@ -423,3 +423,187 @@ def calculate_distance_matrix(gdf_points):
             else:
                 distance_matrix[i, j] = 0
     return distance_matrix
+
+## Voronoi Adjacency Distance
+def voronoi_adjacency_distance(gdf_points, clip_box=box(0, 0, 50, 50)):
+    points = np.array([[point.x, point.y] for point in gdf_points.geometry])
+    points2=points
+    points2 = np.append(points2, [[999,999], [-999,999], [999,-999], [-999,-999]], axis = 0)
+    vor = Voronoi(points2)
+    point_to_region = vor.point_region[:len(points)]
+    polygons = []
+    ids = []
+    for point_idx, region_idx in enumerate(point_to_region):
+        region = vor.regions[region_idx]
+        if -1 in region:
+            continue
+        polygon = Polygon([vor.vertices[i] for i in region])
+        clipped_polygon = polygon.intersection(clip_box)
+        if not clipped_polygon.is_empty:
+            polygons.append(clipped_polygon)
+            ids.append(point_idx)  # point index
+    
+    # Generate a GeoDataFrame from the Voronoi polygons
+    voronoi_gdf = gpd.GeoDataFrame({'id': ids, 'geometry': polygons}, crs="EPSG:4326")
+
+    # Investigate the adjacency of the Voronoi polygons
+    num_points = len(points)
+    distances = np.full((num_points, num_points), 99999)
+    for i in range(num_points):
+        for j in range(num_points):
+            if i != j:
+                # find the Voronoi polygon of the two points
+                if voronoi_gdf.geometry[i].touches(voronoi_gdf.geometry[j]):
+                    # if the two polygons are adjacent, calculate the distance between the two points
+                    distance = gdf_points.geometry[i].distance(gdf_points.geometry[j])*100
+                    distances[i, j] = round(distance)    
+    return distances, voronoi_gdf
+
+
+## KNN Adjacency Distance
+def knn_adjacency_distance(gdf_points, k):
+    # Extract point coordinates from the GeoDataFrame
+    points = np.array([[point.x, point.y] for point in gdf_points.geometry])
+
+    # Create and fit the k-nearest neighbors model
+    neigh = NearestNeighbors(n_neighbors=k)
+    neigh.fit(points)
+
+    # Find the k-nearest neighbors for each point
+    distances, indices = neigh.kneighbors(points)
+
+    # initialize the distance matrix(99999; if not adjacent)
+    distance_matrix = np.full((len(points), len(points)), 99999)
+        # Fill in the actual distances for k-nearest neighbors
+    for i in range(len(points)):
+        for j in indices[i]:
+            if i != j:  # Exclude self
+                actual_distance = np.linalg.norm(points[i] - points[j])*100
+                distance_matrix[i][j] = round(actual_distance)  # Round to 0 decimal places
+
+    # 0 for the cost of moving from a city to itself
+    np.fill_diagonal(distance_matrix, 0)
+    return distance_matrix
+
+## Combine Distance Matrices
+def combine_distance_matrices(knn_distances, voronoi_distances):
+    # Generate a matrix to store the final distances
+    final_distances = np.full(knn_distances.shape, 99999) # initialize the distance matrix(99999; if not adjacent)
+
+    # Combine the two distance matrices
+    for i in range(final_distances.shape[0]):
+        for j in range(final_distances.shape[1]):
+            # If both distances are not 99999, take the minimum
+            if knn_distances[i][j] != 99999 and voronoi_distances[i][j] != 99999.00:
+                final_distances[i][j] = min(knn_distances[i][j], voronoi_distances[i][j])
+            elif knn_distances[i][j] != 99999:
+                final_distances[i][j] = knn_distances[i][j]
+            elif voronoi_distances[i][j] != 99999.00:
+                final_distances[i][j] = voronoi_distances[i][j]
+    return final_distances
+
+## Generate LP Model
+def generate_lp_model(distance_matrix):
+    n = len(distance_matrix)  # The number of points
+   
+    # 1. Generate the objective function
+    objective_function = "Minimize\nobj: "
+    variables_str = " + ".join(f"{distance_matrix[i][j]} X_{i+1}_{j+1}"
+                               for i in range(n) for j in range(n) if i != j)
+    objective_function += variables_str
+   
+    # 2. Generate the subject to constraints
+    subject_to = "\n\nSubject To\n"
+    for i in range(1, n + 1):
+        subject_to += f"Con_{i}: " + " + ".join(f"X_{i}_{j}" for j in range(1, n + 1) if j != i) + " = 1\n"
+   
+    for j in range(1, n + 1):
+        subject_to += f"Con_{n + j}: " + " + ".join(f"X_{i}_{j}" for i in range(1, n + 1) if i != j) + " = 1\n"
+   
+    # 3. MTZ constraints(prevent subtours)
+    mtz_constraints = "\n"
+    for i in range(2, n + 1):
+        for j in range(2, n + 1):
+            if i != j:
+                mtz_constraints += f"MTZ_{i}_{j}: U_{i} - U_{j} + {n} X_{i}_{j} <= {n - 1}\n"
+   
+    # 4. Bounds
+    bounds = "\nBounds\n"
+    for i in range(2, n + 1):
+        bounds += f"1 <= U_{i} <= {n-1}\n"
+   
+    # 5. Binaries
+    binaries = "\nBinaries\n"
+    for i in range(1, n + 1):
+        binaries += " ".join(f"X_{i}_{j}" for j in range(1, n + 1) if i != j) + "\n"
+   
+    generals = "\nGenerals\n" + " ".join(f"U_{i}" for i in range(2, n + 1))
+   
+    # 6. Combine all the parts
+    lp_model = objective_function + subject_to + mtz_constraints + bounds + binaries + generals + "\n\nEnd"
+    print(f"\* Generated LP model for {n} points.*/")
+    return lp_model
+
+## Write LP File
+def writeLpFile_func(k, distance_matrix, i, path, num_points):
+    # 'k' = number of nearest neighbors in KNN
+    # 'distance_matrix' = distance matrix
+    # 'i'= iteration number
+    # 'workdir' = directory to save the LP files
+    
+    # Generate the LP model
+    lp_model = generate_lp_model(distance_matrix)
+    
+    # Save the LP model to a file
+    file_path = f"{path}/03_LPFiles/03_stra_randompoints/TSP_num{num_points}_iter{i+1}_k{k}.lp"
+
+    # Create the directory if it does not exist
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    
+    # Write the LP model to a file
+    with open(file_path, 'w') as file:
+        file.write(lp_model)
+    print(f"LP file saved to {file_path}")
+
+## 6. Get attribute from cplex optimization results
+def get_attributes_cplex(result):
+    """
+    Extracts various attributes from the result of a CPLEX optimization.
+
+    Args:
+        result (str): The result string from a CPLEX optimization.
+
+    Returns:
+        timenb (str or None): The solution time in seconds, if found in the result string.
+        iternb (str or None): The number of iterations, if found in the result string.
+        nodenb (str or None): The number of nodes, if found in the result string.
+        objval (float): The objective value, if found in the result string. Defaults to 0.0 if not found.
+        dettime (str or None): The deterministic time in ticks, if found in the result string.
+
+    Example:
+        result = "Solution time = 10 sec. Iterations = 5 Nodes = 3 Objective = 100.0 Deterministic time = 20 ticks"
+        timenb, iternb, nodenb, objval, dettime = get_attributes_cplex(result)
+    """
+    # Initialize default values
+    timenb = iternb = nodenb = objval = dettime = None
+
+    # Use regular expressions to find matches
+    time_match = re.search(r'Solution time =\s+([\d\.]+) sec.', result)
+    iter_match = re.search(r'Iterations = (\d+)', result)
+    node_match = re.search(r'Nodes = (\d+)', result)
+    objval_match = re.search(r'Objective =\s+([\d\.e\+\-]+)', result)
+    dettime_match = re.search(r'Deterministic time =\s+([\d\.]+) ticks', result)
+
+    # Extract values if matches are found
+    if time_match:
+        timenb = time_match.group(1)
+    if iter_match:
+        iternb = iter_match.group(1)
+    if node_match:
+        nodenb = node_match.group(1)
+    if objval_match:
+        objval = objval_match.group(1)
+    if dettime_match:
+        dettime = dettime_match.group(1)
+    objval = objval if objval is not None else 0.0 
+    return timenb, iternb, nodenb, float(objval), dettime

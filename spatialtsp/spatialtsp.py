@@ -12,7 +12,10 @@ import random
 from scipy.spatial import distance, Voronoi
 from sklearn.neighbors import NearestNeighbors
 import geopandas as gpd
-from shapely.geometry import Point
+from shapely.geometry import Point, box, Polygon
+import re
+import os
+
 
 class Map(ipyleaflet.Map):
     """This is the map class that inherits from ipyleaflet.Map.

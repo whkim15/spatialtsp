@@ -9,9 +9,10 @@ from ipywidgets import widgets
 # For spatialtsp
 import numpy as np
 import random
-from scipy.spatial import distance, Voronoi
+from scipy.spatial import distance, Voronoi, voronoi_plot_2d
 from sklearn.neighbors import NearestNeighbors
 import geopandas as gpd
+from geopandas.tools import overlay
 from shapely.geometry import Point, box, Polygon
 import re
 import os

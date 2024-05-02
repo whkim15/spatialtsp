@@ -367,6 +367,36 @@ def is_far_enough(new_point, existing_points, min_distance=3):
             return False
     return True
 
+def generate_random_points(num_points, num_points_per_cell=1, x_max=50, y_max=50, min_distance=1, seed=0):
+    np.random.seed() 
+    n=num_points
+    points_list = []
+
+    # Calculate the total number of cells (n by n grid)
+    num_cells = n ** 2
+    cell_width = x_max / n
+    cell_height = y_max / n
+    points_list = []
+
+    for i in range(n):
+        for j in range(n):
+            cell_points = set()
+            while len(cell_points) < num_points_per_cell:
+                x_min, x_max = i * cell_width, (i + 1) * cell_width
+                y_min, y_max = j * cell_height, (j + 1) * cell_height
+                x = np.random.uniform(x_min, x_max)
+                y = np.random.uniform(y_min, y_max)
+                new_point = (x, y)
+
+                if is_far_enough(new_point, cell_points, min_distance):
+                    cell_points.add(new_point)
+
+            points_list.extend(cell_points)
+    
+    gdf_points = gpd.GeoDataFrame({'geometry': [Point(p) for p in points_list]}, crs="EPSG:4326")
+    return gdf_points
+
+
 def generate_clustered_points(num_points, std_dev=5, cluster_centers=[(13, 13), (37, 37)], x_max=50, y_max=50, min_distance=3, seed=None):
     """Generate clustered points.
 
@@ -453,6 +483,7 @@ def voronoi_adjacency_distance(gdf_points, clip_box=box(0, 0, 50, 50)):
     num_points = len(points)
     distances = np.full((num_points, num_points), 99999)
     for i in range(num_points):
+        distances[i, i] = 0
         for j in range(num_points):
             if i != j:
                 # find the Voronoi polygon of the two points
@@ -460,7 +491,7 @@ def voronoi_adjacency_distance(gdf_points, clip_box=box(0, 0, 50, 50)):
                     # if the two polygons are adjacent, calculate the distance between the two points
                     distance = gdf_points.geometry[i].distance(gdf_points.geometry[j])*100
                     distances[i, j] = round(distance)    
-    return distances, voronoi_gdf
+    return distances
 
 
 ## KNN Adjacency Distance
@@ -558,7 +589,7 @@ def writeLpFile_func(k, distance_matrix, i, path, num_points):
     lp_model = generate_lp_model(distance_matrix)
     
     # Save the LP model to a file
-    file_path = f"{path}/03_LPFiles/03_stra_randompoints/TSP_num{num_points}_iter{i+1}_k{k}.lp"
+    file_path = f"{path}/final_work/03_LPFiles/TSP_num{num_points}_k{k}.lp"
 
     # Create the directory if it does not exist
     os.makedirs(os.path.dirname(file_path), exist_ok=True)

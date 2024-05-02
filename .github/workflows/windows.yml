@@ -30,3 +30,6 @@ jobs:
                   pip install --no-cache-dir Cython
                   pip install -r requirements.txt
                   pip install .
+            - name: Set Environment Variables
+              run: |
+                  echo "CPLEX_PATH=C:/path/to/cplex" >> $GITHUB_ENV

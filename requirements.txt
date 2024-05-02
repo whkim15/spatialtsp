@@ -15,3 +15,5 @@ cplex
 matplotlib  
 pyproj 
 descartes
+re
+os

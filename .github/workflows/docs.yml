@@ -20,7 +20,7 @@ jobs:
                   pip install .
             - name: Discover typos with codespell
               run: |
-                  codespell --skip="*.csv,*.geojson,*.json,*.js,*.html,*cff,./.git,*.txt,*.data_types.ipynb,*.py" --ignore-words-list="aci,hist,vor,voronoi,descartes,cplex,spatialtsp,vaI, val,te,AlS,LeW,lte" --ignore-words="list"
+                  codespell --skip="*.csv,*.geojson,*.json,*.js,*.html,*cff,./.git,*.txt,*.data_types.ipynb,*.py" --ignore-words-list="aci,hist,vor,voronoi,descartes,cplex,spatialtsp,vaI, val,te,AlS,LeW,lte"
             - name: PKG-TEST
               run: |
                   python -m unittest discover tests/

@@ -369,6 +369,20 @@ def is_far_enough(new_point, existing_points, min_distance=3):
     return True
 
 def generate_random_points(num_points, num_points_per_cell=1, x_max=50, y_max=50, min_distance=1, seed=0):
+    """ Generates a specified number of points within a grid, ensuring a minimum distance between each point.
+
+
+    Args:
+        num_points (int): The total number of points to generate.
+        num_points_per_cell (int, optional): The maximum number of points allowed within each cell of the grid. Defaults to 1.
+        x_max (int, optional): The maximum x-coordinate for the grid. Defaults to 50.
+        y_max (int, optional): The maximum y-coordinate for the grid. Defaults to 50.
+        min_distance (int, optional): The minimum allowed distance between any two points. Defaults to 1.
+        seed (int, optional): The seed for the random number generator, for reproducibility. Defaults to 0.
+
+    Returns:
+        list of tuples: A list of (x, y) coordinates for the generated points.
+    """
     np.random.seed() 
     n=num_points
     points_list = []
@@ -460,6 +474,16 @@ def calculate_distance_matrix(gdf_points):
 
 ## Voronoi Adjacency Distance
 def voronoi_adjacency_distance(gdf_points, clip_box=box(0, 0, 50, 50)):
+    """
+    Generate Distance Matrix based on adjacency in Voronoi polygon
+
+    Args:
+        gdf_points (GeoDataFrame): A GeoDataFrame containing the points to process.
+        clip_box (shapely.geometry.Polygon, optional): A shapely Polygon representing the bounding box to which the points should be clipped. Defaults to a 50x50 box with its lower left corner at the origin.
+
+    Returns:
+        GeoDataFrame: A new GeoDataFrame containing the processed points.
+    """
     points = np.array([[point.x, point.y] for point in gdf_points.geometry])
     points2=points
     points2 = np.append(points2, [[999,999], [-999,999], [999,-999], [-999,-999]], axis = 0)
@@ -492,11 +516,21 @@ def voronoi_adjacency_distance(gdf_points, clip_box=box(0, 0, 50, 50)):
                     # if the two polygons are adjacent, calculate the distance between the two points
                     distance = gdf_points.geometry[i].distance(gdf_points.geometry[j])*100
                     distances[i, j] = round(distance)    
-    return distances
+    return distances, voronoi_gdf
 
 
 ## KNN Adjacency Distance
 def knn_adjacency_distance(gdf_points, k):
+    """
+    Generate Distance Matrix based on adjacency in K-NN model
+
+    Args:
+        gdf_points (GeoDataFrame): A GeoDataFrame containing the points for which to generate the distance matrix.
+        k (int): The number of nearest neighbors to consider for each point.
+
+    Returns:
+        numpy.ndarray: A 2D array representing the distance matrix, where the entry at [i, j] is the distance from the i-th point to its j-th nearest neighbor.
+    """
     # Extract point coordinates from the GeoDataFrame
     points = np.array([[point.x, point.y] for point in gdf_points.geometry])
 
@@ -522,6 +556,16 @@ def knn_adjacency_distance(gdf_points, k):
 
 ## Combine Distance Matrices
 def combine_distance_matrices(knn_distances, voronoi_distances):
+    """
+    Combines the distance matrices from a K-Nearest Neighbors model and a Voronoi diagram into a single distance matrix.
+
+    Args:
+        knn_distances (numpy.ndarray): the distance matrix from a K-Nearest Neighbors model.
+        voronoi_distances (numpy.ndarray): the distance matrix from a Voronoi diagram.
+
+    Returns:
+        numpy.ndarray: Combined distance matrix.
+    """
     # Generate a matrix to store the final distances
     final_distances = np.full(knn_distances.shape, 99999) # initialize the distance matrix(99999; if not adjacent)
 
@@ -539,6 +583,15 @@ def combine_distance_matrices(knn_distances, voronoi_distances):
 
 ## Generate LP Model
 def generate_lp_model(distance_matrix):
+    """
+    Generate LP Model to Solve the Traveling Salesman Problem (TSP).
+
+    Args:
+        distance_matrix (numpy.ndarray): the distance between each pair of points. The entry at [i, j] is the distance from the i-th point to the j-th point.
+
+    Returns:
+        list: the lp models for the TSP problem.
+    """
     n = len(distance_matrix)  # The number of points
    
     # 1. Generate the objective function
@@ -580,7 +633,7 @@ def generate_lp_model(distance_matrix):
     return lp_model
 
 ## Write LP File
-def writeLpFile_func(k, distance_matrix, i, path, num_points):
+def writeLpFile_func(distance_matrix, path):
     # 'k' = number of nearest neighbors in KNN
     # 'distance_matrix' = distance matrix
     # 'i'= iteration number
@@ -590,7 +643,7 @@ def writeLpFile_func(k, distance_matrix, i, path, num_points):
     lp_model = generate_lp_model(distance_matrix)
     
     # Save the LP model to a file
-    file_path = f"{path}/final_work/03_LPFiles/TSP_num{num_points}_k{k}.lp"
+    file_path = f"{path}/final_work/03_LPFiles/TSP_test.lp"
 
     # Create the directory if it does not exist
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -629,6 +682,15 @@ def get_attributes_cplex(result):
     objval_match = re.search(r'Objective =\s+([\d\.e\+\-]+)', result)
     dettime_match = re.search(r'Deterministic time =\s+([\d\.]+) ticks', result)
 
+    variables = {}
+    var_pattern = re.compile(r'X_(\d+)_(\d+)\s+(\d+\.\d+)')
+    for line in result.split('\n'):
+        var_match = var_pattern.search(line)
+        if var_match:
+            var_name = f"X_{var_match.group(1)}_{var_match.group(2)}"
+            var_value = float(var_match.group(3))
+            variables[var_name] = var_value
+
     # Extract values if matches are found
     if time_match:
         timenb = time_match.group(1)
@@ -641,4 +703,5 @@ def get_attributes_cplex(result):
     if dettime_match:
         dettime = dettime_match.group(1)
     objval = objval if objval is not None else 0.0 
-    return timenb, iternb, nodenb, float(objval), dettime
+
+    return timenb, iternb, nodenb, float(objval), dettime, variables

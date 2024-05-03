@@ -9,14 +9,14 @@
 
 -   Free software: MIT License
 -   Documentation: <https://whkim15.github.io/spatialtsp>
-![TSP: Newsweek, July 26, 1954](https://www.math.uwaterloo.ca/tsp/usa50/img/newsweek_medium.jpg)
 
 
 ## Background
 ### Traveling Salesman Problem(TSP)
 -   The Traveling Salesman Problem(TSP) is the problem of finding a minimum cost complete tour of a set of cities without sub-tour. 
 
-https://www.math.uwaterloo.ca/tsp/usa50/img/newsweek_medium.jpg
+![TSP: Newsweek, July 26, 1954](https://www.math.uwaterloo.ca/tsp/usa50/img/newsweek_medium.jpg)
+
 
 ### Challenge in the Traveling Salesman Problem (TSP)
 -   TSP is a cornerstone challenge in Location Science, known as NP-Hard. 
